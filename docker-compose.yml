@@ -1,0 +1,86 @@
+version: "3"
+
+networks:
+  laravel:
+
+services:
+  site:
+    image: gbelot2003/docker-laravel_site_1:latest
+    volumes:
+      - ./:/var/www/html
+    ports:
+      - "80:80"
+    depends_on:
+      - php
+      - mysql
+      - redis
+      - npm
+    networks:
+      - laravel
+
+  php:
+    image: gbelot2003/docker-laravel_php_1:v3
+    volumes:
+      - ./:/var/www/html
+    ports:
+      - "9000:9000"
+    networks:
+      - laravel
+
+  mysql:
+    image: mysql:5.7.29
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: homestead
+      MYSQL_USER: homestead
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: password
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    networks:
+      - laravel
+
+  #  pgsql:
+  #    image: postgres:9.6-alpine
+  #    volumes:
+  #      - pgsqldata:/var/lib/postgresql/data
+  #    environment:
+  #      - "POSTGRES_DB=${DB_DATABASE}"
+  #      - "POSTGRES_USER=${DB_USER}"
+  #      - "POSTGRES_PASSWORD=${DB_PASSWORD}"
+  #    ports:
+  #        - "5432:5432"
+
+  redis:
+    image: redis:latest
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - laravel
+    #ports:
+    #  - '6379:6379'
+
+  npm:
+    image: node:13.7
+    volumes:
+      - ./:/var/www/html
+    working_dir: /var/www/html
+    entrypoint: ["npm"]
+
+  app:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    environment:
+      - PMA_ARBITRARY=1
+    links:
+      - mysql
+    ports:
+      - 8085:80
+    volumes:
+      - /sessions
+    networks:
+      - laravel
